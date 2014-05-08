@@ -1,0 +1,3 @@
+[submodule "pyVBus"]
+	path = pyVBus
+	url = https://github.com/ptashek/pyVBus.git
