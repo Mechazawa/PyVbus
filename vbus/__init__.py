@@ -1,2 +1,2 @@
-from .VBUSConnection import VBUSConnection
+from .VBUSConnection import VBUSConnection, VBUSException
 from .VBUSResponse import VBUSResponse
