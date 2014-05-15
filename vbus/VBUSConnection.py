@@ -1,5 +1,11 @@
 import ssl
 import socket
+from .VBUSResponse import VBUSResponse
+
+
+class VBUSAuthenticationException(Exception):
+    def __init__(self, *args):
+        super.__init__(*args)
 
 
 class VBUSConnection(object):
@@ -14,14 +20,18 @@ class VBUSConnection(object):
         self._sock = None
         self._buffer = []
 
-    def connect(self, ssl=False):
+    def connect(self, sslsock=False):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if ssl:
+        if sslsock:
             self._sock = ssl.wrap_socket(self._sock)
         self._sock.connect((self.host, self.port))
-        assert VBUSResponse(self._lrecv()).message == "HELLO"
-        if self.password:
+        assert VBUSResponse(self._lrecv()).type == "HELLO"
 
+        if self.password:
+            self._lsend("PASS %s" % self.password)
+            resp = VBUSResponse(self._lrecv())
+            if not resp.positive:
+                raise VBUSAuthenticationException("Could not authenticate: %s" % resp.message)
 
     def _lrecv(self):
         c, s = '', ''

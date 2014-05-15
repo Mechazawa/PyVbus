@@ -1,1 +1,2 @@
-__author__ = 'shodan'
+from .VBUSConnection import VBUSConnection
+from .VBUSResponse import VBUSResponse
