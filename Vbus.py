@@ -11,13 +11,32 @@ DEBUG_PROTOCOL = 0b0100
 
 _FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 _PAYLOADMAP = {
-    'temp1': (0, 1), 'temp2': (2, 3),
-    'temp3': (4, 5), 'temp4': (6, 7),
-    'pump1': (8, 8), 'pump2': (9, 9),
-    'relais': (10, 10), 'errors': (11, 11),
-    'time': (12, 13), 'scheme': (14, 14),
-    'flags': (15, 15), 'r1time': (16, 17),
-    'r2time': (18, 19), 'version': (26, 27)
+    # See http://tubifex.nl/wordpress/wp-content/uploads/2013/05/VBus-Protokollspezification_en_270111.pdf#53
+    # Did not implement mask
+    # Offset, size, factor
+    'temp1': (0, 2, 0.1),
+    'temp2': (2, 2, 0.1),
+    'temp3': (4, 2, 0.1),
+    'temp4': (6, 2, 0.1),
+    'temp5': (8, 2, 0.1),
+    'temprps': (10, 2, 0.1),
+    'presrps': (12, 2, 0.1),
+    'tempvfs': (14, 2, 0.1),
+    'flowvfs': (16, 2, 1),
+    'flowv40': (18, 2, 1),
+    'unit': (20, 1, 1),
+    'pwm1': (22, 1, 1),  # Strange padding?
+    'pwm2': (23, 1, 1),
+    'pump1': (24, 1, 1),
+    'pump2': (25, 1, 1),
+    'pump3': (26, 1, 1),
+    'pump4': (27, 1, 1),
+    'opsec1': (28, 4, 1),
+    'opsec2': (32, 4, 1),
+    'opsec3': (36, 4, 1),
+    'opsec4': (40, 4, 1),
+    'error': (44, 2, 1),
+    'tatus': (46, 2, 1)
 }
 
 
@@ -148,21 +167,19 @@ class VBUSConnection(object):
 
         vals = {}
         for i, rng in _PAYLOADMAP.items():
-            vals[i] = self._getbytes(data, rng[0], rng[1]+1)
+            vals[i] = self._getbytes(data, rng[0], rng[0] + rng[1])
 
             # Temperatures can be negative (using two's complement)
             if i.startswith('temp'):
-                bits = (rng[1] - rng[0] + 1) * 8
+                bits = (rng[1]) * 8
                 if vals[i] >= 1 << (bits - 1):
                     vals[i] -= 1 << bits
+            # Apply factor
+            vals[i] *= rng[2]
 
         if self.debugmode & DEBUG_PROTOCOL:
             print vals
         return vals
-
-
-
-
 
     @staticmethod
     def _checksum(data):
