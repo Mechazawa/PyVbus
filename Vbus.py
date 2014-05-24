@@ -10,6 +10,15 @@ DEBUG_COMMAND = 0b0010
 DEBUG_PROTOCOL = 0b0100
 
 _FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+_PAYLOADMAP = {
+    'temp1': (0, 1), 'temp2': (2, 3),
+    'temp3': (4, 5), 'temp4': (6, 7),
+    'pump1': (8, 8), 'pump2': (9, 9),
+    'relais': (10, 10), 'errors': (11, 11),
+    'time': (12, 13), 'scheme': (14, 14),
+    'flags': (15, 15), 'r1time': (16, 17),
+    'r2time': (18, 19), 'version': (26, 27)
+}
 
 
 def _hexdump(src, length=16):
@@ -85,11 +94,48 @@ class VBUSConnection(object):
             self._mode = MODE_DATA
 
         # Wait till we get the correct protocol
-        while True:
-            raw = self._brecv()
+        for d in self._brecv().split(chr(0xAA)):
+            # Check the protocol
+            if self._getbytes(d, 4, 5) is not 0x10:
+                continue
+
+            # Are we getting a payload?
+            if self._getbytes(d, 5, 7) is not 0x100:
+                continue
+
+            # Is the checksum valid?
+            if self._checksum(d[0:8]) is not self._getbytes(d, 8, 9):
+                if self.debugmode & DEBUG_PROTOCOL:
+                    print "Invalid checksum: got %02X expected %02X" % \
+                          (self._checksum(d[0:8]), self._getbytes(d, 8, 9))
+                continue
+
+            frames = self._getbytes(d, 7, 8)
+            payload = d[9:9 + (6*frames)]
+            # Check payload length
+            if len(payload) is not 6*frames:
+                if self.debugmode & DEBUG_PROTOCOL:
+                    print "Unexpected payload length: %i != %i" % \
+                          (len(payload), 6*frames)
+                continue
+
+
+
+
 
     def getmode(self):
         return self._mode
+
+    @staticmethod
+    def _checksum(data):
+        c = 0x7F
+        for b in data:
+            c = ((c - ord(b)) % 0x100) & 0x7F
+        return c
+
+    @staticmethod
+    def _getbytes(data, begin, end):
+        return sum([ord(b) << (i*8) for i, b in enumerate(data[begin:end])])
 
     def _lrecv(self):
         c, s = '', ''
