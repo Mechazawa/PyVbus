@@ -110,21 +110,59 @@ class VBUSConnection(object):
                           (self._checksum(d[0:8]), self._getbytes(d, 8, 9))
                 continue
 
+            # Check payload length
             frames = self._getbytes(d, 7, 8)
             payload = d[9:9 + (6*frames)]
-            # Check payload length
             if len(payload) is not 6*frames:
                 if self.debugmode & DEBUG_PROTOCOL:
                     print "Unexpected payload length: %i != %i" % \
                           (len(payload), 6*frames)
                 continue
 
+            r = self._parsepayload(payload)
+            if r:
+                return r
 
-
-
+        return self.data()
 
     def getmode(self):
         return self._mode
+
+    def _parsepayload(self, payload):
+        data = []
+        for i in range(len(payload)/6):
+            frame = payload[i*6:i*6+6]
+
+            # Check frame checksum
+            if ord(frame[5]) is not self._checksum(frame[:-1]):
+                if self.debugmode & DEBUG_PROTOCOL:
+                    print "Frame checksum mismatch: ", ord(frame[5]), self._checksum(frame[:-1])
+                return None
+
+            septet = ord(frame[4])
+            for j in range(4):
+                if septet & (1 << j):
+                    data.append(chr(ord(frame[j]) | 0x80))
+                else:
+                    data.append(frame[j])
+
+        vals = {}
+        for i, rng in _PAYLOADMAP.items():
+            vals[i] = self._getbytes(data, rng[0], rng[1]+1)
+
+            # Temperatures can be negative (using two's complement)
+            if i.startswith('temp'):
+                bits = (rng[1] - rng[0] + 1) * 8
+                if vals[i] >= 1 << (bits - 1):
+                    vals[i] -= 1 << bits
+
+        if self.debugmode & DEBUG_PROTOCOL:
+            print vals
+        return vals
+
+
+
+
 
     @staticmethod
     def _checksum(data):
