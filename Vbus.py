@@ -7,7 +7,7 @@ MODE_DATA = 1
 
 DEBUG_HEXDUMP = 0b0001
 DEBUG_COMMAND = 0b0010
-DEBUG_PROTOCOL = 0b0001
+DEBUG_PROTOCOL = 0b0100
 
 _FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 
