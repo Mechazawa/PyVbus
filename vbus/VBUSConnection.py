@@ -1,6 +1,7 @@
 import ssl
 import socket
 from .VBUSResponse import VBUSResponse
+from .util import hexdump
 
 
 MODE_COMMAND = 0
@@ -12,14 +13,17 @@ class VBUSException(Exception):
         super.__init__(*args)
 
 
+
 class VBUSConnection(object):
-    def __init__(self, host, port=7053, password=""):
+    def __init__(self, host, port=7053, password="", verbose=False):
         assert isinstance(port, int)
         assert isinstance(host, str)
         assert isinstance(password, str)
+        assert isinstance(verbose, bool)
         self.host = host
         self.port = port
         self.password = password or False
+        self.verbose = verbose
 
         self._mode = MODE_COMMAND
         self._sock = None
@@ -45,12 +49,14 @@ class VBUSConnection(object):
 
     def data(self):
         assert self._sock
-        self._lsend("DATA")
+        if self._mode is not MODE_DATA:
+            self._lsend("DATA")
 
-        resp = VBUSResponse(self._lrecv())
-        if not resp.positive:
-            raise VBUSException("Could create a data stream: %s" % resp.message)
-        self._mode = MODE_DATA
+            resp = VBUSResponse(self._lrecv())
+            if not resp.positive:
+                raise VBUSException("Could create a data stream: %s" % resp.message)
+            self._mode = MODE_DATA
+        return self._brecv()
 
     def getmode(self):
         return self._mode
@@ -62,9 +68,23 @@ class VBUSConnection(object):
             if c == '':
                 break
             s += c
-        return s.strip('\r\n')
+        s = s.strip('\r\n')
+        if self.verbose:
+            print "< " + s
+        return s
+
+    def _brecv(self, n=1024):
+        d = self._sock.recv(n)
+        if self.verbose:
+            print hexdump(d)
+        return d
 
     def _lsend(self, s):
+        if self.verbose:
+            print "> " + s
         self._sock.send(s + "\r\n")
+
+    def _bsend(self, s):
+        self._sock.send(s)
 
 
