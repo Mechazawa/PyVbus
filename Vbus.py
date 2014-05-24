@@ -5,7 +5,11 @@ import socket
 MODE_COMMAND = 0
 MODE_DATA = 1
 
-FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+DEBUG_HEXDUMP = 0b0001
+DEBUG_COMMAND = 0b0010
+DEBUG_PROTOCOL = 0b0001
+
+_FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 
 
 def _hexdump(src, length=16):
@@ -13,9 +17,9 @@ def _hexdump(src, length=16):
     for i in xrange(0, len(src), length):
         s = src[i:i+length]
         hexa = ' '.join(["%02X" % ord(x) for x in s])
-        printable = s.translate(FILTER)
+        printable = s.translate(_FILTER)
         result.append("%04X   %-*s   %s\n" % (i, length*3, hexa, printable))
-    return ''.join(result)
+    return "Len %iB\n%s" % (len(src), ''.join(result))
 
 
 class VBUSException(Exception):
@@ -32,16 +36,21 @@ class VBUSResponse(object):
         self.message = None if len(spl) == 1 else spl[1][:1]
 
 
+class VBUSPayload(object):
+    def __init__(self, raw):
+        pass
+
+
 class VBUSConnection(object):
-    def __init__(self, host, port=7053, password="", verbose=False):
+    def __init__(self, host, port=7053, password="", debugmode=0b0000):
         assert isinstance(port, int)
         assert isinstance(host, str)
         assert isinstance(password, str)
-        assert isinstance(verbose, bool)
+        assert isinstance(debugmode, int)
         self.host = host
         self.port = port
         self.password = password or False
-        self.verbose = verbose
+        self.debugmode = debugmode
 
         self._mode = MODE_COMMAND
         self._sock = None
@@ -74,7 +83,10 @@ class VBUSConnection(object):
             if not resp.positive:
                 raise VBUSException("Could create a data stream: %s" % resp.message)
             self._mode = MODE_DATA
-        return self._brecv()
+
+        # Wait till we get the correct protocol
+        while True:
+            raw = self._brecv()
 
     def getmode(self):
         return self._mode
@@ -87,25 +99,22 @@ class VBUSConnection(object):
                 break
             s += c
         s = s.strip('\r\n')
-        if self.verbose:
+        if self.debugmode & DEBUG_COMMAND:
             print "< " + s
         return s
 
     def _brecv(self, n=1024):
         d = self._sock.recv(n)
-        if self.verbose:
+        if self.debugmode & DEBUG_HEXDUMP:
             print _hexdump(d)
         return d
 
     def _lsend(self, s):
-        if self.verbose:
+        if self.debugmode & DEBUG_COMMAND:
             print "> " + s
         self._sock.send(s + "\r\n")
 
     def _bsend(self, s):
-        if self.verbose:
+        if self.debugmode & DEBUG_HEXDUMP:
             print _hexdump(s)
         self._sock.send(s)
-
-
-
