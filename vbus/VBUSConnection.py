@@ -1,17 +1,35 @@
 import ssl
 import socket
-from .VBUSResponse import VBUSResponse
-from .util import hexdump
 
 
 MODE_COMMAND = 0
 MODE_DATA = 1
+
+FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+
+
+def _hexdump(src, length=16):
+    result = []
+    for i in xrange(0, len(src), length):
+        s = src[i:i+length]
+        hexa = ' '.join(["%02X" % ord(x) for x in s])
+        printable = s.translate(FILTER)
+        result.append("%04X   %-*s   %s\n" % (i, length*3, hexa, printable))
+    return ''.join(result)
 
 
 class VBUSException(Exception):
     def __init__(self, *args):
         super.__init__(*args)
 
+
+class VBUSResponse(object):
+    def __init__(self, line):
+        assert len(line) > 2
+        self.positive = line[0] == "+"
+        spl = line[1:].split(":", 1)
+        self.type = spl[0]
+        self.message = None if len(spl) == 1 else spl[1][:1]
 
 
 class VBUSConnection(object):
@@ -76,7 +94,7 @@ class VBUSConnection(object):
     def _brecv(self, n=1024):
         d = self._sock.recv(n)
         if self.verbose:
-            print hexdump(d)
+            print _hexdump(d)
         return d
 
     def _lsend(self, s):
@@ -85,6 +103,9 @@ class VBUSConnection(object):
         self._sock.send(s + "\r\n")
 
     def _bsend(self, s):
+        if self.verbose:
+            print _hexdump(s)
         self._sock.send(s)
+
 
 
