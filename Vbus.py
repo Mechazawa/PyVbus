@@ -47,25 +47,25 @@ _PAYLOADMAP = {
 
 
 class _TERM:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 
 def _hexdump(src, length=16):
     result = []
     for i in xrange(0, len(src), length):
-        s = src[i:i+length]
+        s = src[i:i + length]
         hexa = ' '.join(["%02X" % ord(x) for x in s])
         printable = s.translate(_FILTER)
-        result.append("%04X   %-*s   %s\n" % (i, length*3, hexa, printable))
+        result.append("%04X   %-*s   %s\n" % (i, length * 3, hexa, printable))
     return "Len %iB\n%s" % (len(src), ''.join(result))
 
 
@@ -154,11 +154,11 @@ class VBUSConnection(object):
 
                 # Check payload length
                 frames = self._getbytes(d, 7, 8)
-                payload = d[9:9 + (6*frames)]
-                if len(payload) is not 6*frames:
+                payload = d[9:9 + (6 * frames)]
+                if len(payload) is not 6 * frames:
                     if self.debugmode & DEBUG_PROTOCOL:
                         print "Unexpected payload length: %i != %i" % \
-                              (len(payload), 6*frames)
+                              (len(payload), 6 * frames)
                     continue
 
                 r = self._parsepayload(payload)
@@ -187,8 +187,8 @@ class VBUSConnection(object):
                 )
             return None
 
-        for i in range(len(payload)/6):
-            frame = payload[i*6:i*6+6]
+        for i in range(len(payload) / 6):
+            frame = payload[i * 6:i * 6 + 6]
             if self.debugmode & DEBUG_PROTOCOL:
                 print "Frame: %s" % ' '.join("%02X" % ord(i) for i in frame)
 
@@ -227,7 +227,7 @@ class VBUSConnection(object):
 
     @staticmethod
     def _getbytes(data, begin, end):
-        return sum([ord(b) << (i*8) for i, b in enumerate(data[begin:end])])
+        return sum([ord(b) << (i * 8) for i, b in enumerate(data[begin:end])])
 
     def _lrecv(self):
         c, s = '', ''
