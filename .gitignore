@@ -55,3 +55,4 @@ docs/_build/
 
 #contains a passwd atm
 test.py
+config.py
