@@ -13,7 +13,9 @@ DEBUG_COMMAND = 0b0010
 DEBUG_PROTOCOL = 0b0100
 
 RECOVER_TIME = 1
+_HIGHEST_BIT = 0x7F
 _FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+_FRAMESIZE = 60
 _PAYLOADMAP = {
     # See http://tubifex.nl/wordpress/wp-content/uploads/2013/05/VBus-Protokollspezification_en_270111.pdf#53
     # Did not implement mask
@@ -42,6 +44,19 @@ _PAYLOADMAP = {
     'error': (44, 2, 1),
     'tatus': (46, 2, 1)
 }
+
+
+class _TERM:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
 
 
 def _hexdump(src, length=16):
@@ -127,6 +142,9 @@ class VBUSConnection(object):
                 if self._getbytes(d, 5, 7) is not 0x100:
                     continue
 
+                if self.debugmode & DEBUG_PROTOCOL:
+                    print "Source map: 0X%02X" % self._getbytes(d, 2, 4)
+
                 # Is the checksum valid?
                 if self._checksum(d[0:8]) is not self._getbytes(d, 8, 9):
                     if self.debugmode & DEBUG_PROTOCOL:
@@ -155,8 +173,24 @@ class VBUSConnection(object):
 
     def _parsepayload(self, payload):
         data = []
+        if len(payload) is not _FRAMESIZE and False:
+            if self.debugmode & DEBUG_PROTOCOL:
+                print "Payload size mismatch: expected %i got %i", _FRAMESIZE, len(payload)
+            return None
+
+        if True in [ord(i) > _HIGHEST_BIT for i in payload]:
+            if self.debugmode & DEBUG_PROTOCOL:
+                print "Found highest byte discarding payload"
+                print ' '.join(
+                    "%02X" % ord(i) if ord(i) <= _HIGHEST_BIT else "%s%02X%s" % (_TERM.RED, ord(i), _TERM.END)
+                    for i in payload
+                )
+            return None
+
         for i in range(len(payload)/6):
             frame = payload[i*6:i*6+6]
+            if self.debugmode & DEBUG_PROTOCOL:
+                print "Frame: %s" % ' '.join("%02X" % ord(i) for i in frame)
 
             # Check frame checksum
             if ord(frame[5]) is not self._checksum(frame[:-1]):
