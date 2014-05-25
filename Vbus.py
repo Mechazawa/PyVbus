@@ -187,10 +187,16 @@ class VBUSConnection(object):
                 )
             return None
 
+        if self.debugmode & DEBUG_PROTOCOL:
+            print "%i frames" % (len(payload)/6, )	
+        if (len(payload)/6) is not 15:
+            if self.debugmode & DEBUG_PROTOCOL:
+                print "Invalid frame count"
+            return None
         for i in range(len(payload) / 6):
             frame = payload[i * 6:i * 6 + 6]
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Frame: %s" % ' '.join("%02X" % ord(i) for i in frame)
+                print "Frame %i: %s" % (i, ' '.join("%02X" % ord(i) for i in frame))
 
             # Check frame checksum
             if ord(frame[5]) is not self._checksum(frame[:-1]):
@@ -256,3 +262,6 @@ class VBUSConnection(object):
         if self.debugmode & DEBUG_HEXDUMP:
             print _hexdump(s)
         self._sock.send(s)
+
+
+
