@@ -16,7 +16,6 @@ data = con.data()
 print data # Print the datamap
 
 # Use a custom payloadmap
-framesize = 60
 payloadmap = {
     # Offset, size, factor
     'temp1': (0, 2, 0.1),
@@ -28,7 +27,7 @@ payloadmap = {
     'pump2': (25, 1, 1)
 }
 
-data = con.data(payloadmap, framesize)
+data = con.data(payloadmap)
 print data
 ```
 ## Payloadmaps
