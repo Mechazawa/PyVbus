@@ -121,7 +121,10 @@ class VBUSConnection(object):
         if not resp.positive:
             raise VBUSException("Could not authenticate: %s" % resp.message)
 
-    def data(self):
+    def data(self, payloadmap=_PAYLOADMAP, framesize=_FRAMESIZE):
+        payloadmap = payloadmap.copy()
+        #assert isinstance(payloadmap, dict)
+        assert isinstance(framesize, int)
         assert self._sock
         if self._mode is not MODE_DATA:
             self._lsend("DATA")
@@ -161,7 +164,7 @@ class VBUSConnection(object):
                               (len(payload), 6 * frames)
                     continue
 
-                r = self._parsepayload(payload)
+                r = self._parsepayload(payload, payloadmap, framesize)
                 if r:
                     return r
             # The vbus freaks out when you send too many requests
@@ -171,11 +174,11 @@ class VBUSConnection(object):
     def getmode(self):
         return self._mode
 
-    def _parsepayload(self, payload):
+    def _parsepayload(self, payload, payloadmap, framesize):
         data = []
-        if len(payload) is not _FRAMESIZE and False:
+        if len(payload) is not framesize and False:
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Payload size mismatch: expected %i got %i", _FRAMESIZE, len(payload)
+                print "Payload size mismatch: expected %i got %i", framesize, len(payload)
             return None
 
         if True in [ord(i) > _HIGHEST_BIT for i in payload]:
@@ -212,7 +215,7 @@ class VBUSConnection(object):
                     data.append(frame[j])
 
         vals = {}
-        for i, rng in _PAYLOADMAP.items():
+        for i, rng in payloadmap.items():
             vals[i] = self._getbytes(data, rng[0], rng[0] + rng[1])
 
             # Temperatures can be negative (using two's complement)
