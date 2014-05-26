@@ -33,3 +33,10 @@ print data
 ```
 ## Payloadmaps
 If you do not know what the source map of your vbus device then enable `DEBUG_PROTOCOL`. This will make it print the source map identifier. You can look up how to implement your source map by just searching for the source map hex in [this document](http://tubifex.nl/wordpress/wp-content/uploads/2013/05/VBus-Protokollspezification_en_270111.pdf).
+
+## Screenshot
+This screenshot was taken with all the debugmodes enabled.
+![screenshot](http://i.imgur.com/uEmmzrF.png)
+
+## License
+See the LICENSE file
