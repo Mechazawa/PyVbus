@@ -84,12 +84,6 @@ class VBUSResponse(object):
         self.type = spl[0]
         self.message = None if len(spl) == 1 else spl[1][:1]
 
-
-class VBUSPayload(object):
-    def __init__(self, raw):
-        pass
-
-
 class VBUSConnection(object):
     def __init__(self, host, port=7053, password="", debugmode=0b0000):
         assert isinstance(port, int)
