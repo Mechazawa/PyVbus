@@ -13,6 +13,7 @@ DEBUG_COMMAND = 0b0010
 DEBUG_PROTOCOL = 0b0100
 
 RECOVER_TIME = 1
+FRAME_COUNT = 15
 _HIGHEST_BIT = 0x7F
 _FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
 _FRAMESIZE = 60
@@ -192,7 +193,7 @@ class VBUSConnection(object):
 
         if self.debugmode & DEBUG_PROTOCOL:
             print "%i frames" % (len(payload)/6, )	
-        if (len(payload)/6) is not 15:
+        if (len(payload)/6) is not FRAME_COUNT:
             if self.debugmode & DEBUG_PROTOCOL:
                 print "Invalid frame count"
             return None
