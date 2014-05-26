@@ -6,7 +6,7 @@ Boiler-monitor
 import Vbus
 con = Vbus.VBUSConnection(
     "HOST", password="ILikeCheese"
-    # These are optional
+    # These are optional. This is the same as setting debugmode to DEBUG_ALL
 #   ,debugmode = Vbus.DEBUG_HEXDUMP | Vbus.DEBUG_COMMAND | DEBUG_PROTOCOL
 )
 con.connect()
