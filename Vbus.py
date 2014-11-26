@@ -186,13 +186,13 @@ class VBUSConnection(object):
                     continue
 
                 if self.debugmode & DEBUG_PROTOCOL:
-                    print "Source map: 0X%02X" % self._getbytes(d, 2, 4)
+                    print("Source map: 0X%02X" % self._getbytes(d, 2, 4))
 
                 # Is the checksum valid?
                 if self._checksum(d[0:8]) is not self._getbytes(d, 8, 9):
                     if self.debugmode & DEBUG_PROTOCOL:
-                        print "Invalid checksum: got %02X expected %02X" % \
-                              (self._checksum(d[0:8]), self._getbytes(d, 8, 9))
+                        print("Invalid checksum: got %02X expected %02X" % \
+                              (self._checksum(d[0:8]), self._getbytes(d, 8, 9)))
                     continue
 
                 # Check payload length
@@ -200,8 +200,8 @@ class VBUSConnection(object):
                 payload = d[9:9 + (6 * frames)]
                 if len(payload) is not 6 * frames:
                     if self.debugmode & DEBUG_PROTOCOL:
-                        print "Unexpected payload length: %i != %i" % \
-                              (len(payload), 6 * frames)
+                        print("Unexpected payload length: %i != %i" % \
+                              (len(payload), 6 * frames))
                     continue
 
                 r = self._parsepayload(payload, payloadmap, payloadsize, framecount)
@@ -221,33 +221,33 @@ class VBUSConnection(object):
         data = []
         if len(payload) is not payloadsize and False:
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Payload size mismatch: expected %i got %i", payloadsize, len(payload)
+                print("Payload size mismatch: expected %i got %i", payloadsize, len(payload))
             return None
 
         if True in [ord(i) > _HIGHEST_BIT for i in payload]:
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Found highest byte discarding payload"
-                print ' '.join(
+                print("Found highest byte discarding payload")
+                print(' '.join(
                     "%02X" % ord(i) if ord(i) <= _HIGHEST_BIT else "%s%02X%s" % (_TERM.RED, ord(i), _TERM.END)
                     for i in payload
-                )
+                ))
             return None
 
         if self.debugmode & DEBUG_PROTOCOL:
-            print "%i frames" % (len(payload)/6, )	
+            print("%i frames" % (len(payload)/6, ))
         if (len(payload)/6) is not framecount:
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Invalid frame count"
+                print("Invalid frame count")
             return None
         for i in range(len(payload) / 6):
             frame = payload[i * 6:i * 6 + 6]
             if self.debugmode & DEBUG_PROTOCOL:
-                print "Frame %i: %s" % (i, ' '.join("%02X" % ord(i) for i in frame))
+                print("Frame %i: %s" % (i, ' '.join("%02X" % ord(i) for i in frame)))
 
             # Check frame checksum
             if ord(frame[5]) is not self._checksum(frame[:-1]):
                 if self.debugmode & DEBUG_PROTOCOL:
-                    print "Frame checksum mismatch: ", ord(frame[5]), self._checksum(frame[:-1])
+                    print("Frame checksum mismatch: ", ord(frame[5]), self._checksum(frame[:-1]))
                 return None
 
             septet = ord(frame[4])
@@ -270,7 +270,7 @@ class VBUSConnection(object):
             vals[i] *= rng[2]
 
         if self.debugmode & DEBUG_PROTOCOL:
-            print vals
+            print(vals)
         return vals
 
     @staticmethod
@@ -290,23 +290,23 @@ class VBUSConnection(object):
             s += c
         s = s.strip('\r\n')
         if self.debugmode & DEBUG_COMMAND:
-            print "< " + s
+            print("< " + s)
         return s
 
     def _brecv(self, n=1024):
         d = self._sock.recv(n)
         if self.debugmode & DEBUG_HEXDUMP:
-            print _hexdump(d)
+            print(_hexdump(d))
         return d
 
     def _lsend(self, s):
         if self.debugmode & DEBUG_COMMAND:
-            print "> " + s
+            print("> " + s)
         self._sock.send(s + "\r\n")
 
     def _bsend(self, s):
         if self.debugmode & DEBUG_HEXDUMP:
-            print _hexdump(s)
+            print(_hexdump(s))
         self._sock.send(s)
 
 
