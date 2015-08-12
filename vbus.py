@@ -283,11 +283,11 @@ class VBUSConnection(object):
 
     def _lrecv(self):
         c, s = '', ''
-        while c != '\n':
+        while c != b'\n':
             c = self._sock.recv(1)
             if c == '':
                 break
-            s += c
+            s += c.decode("utf-8") 
         s = s.strip('\r\n')
         if self.debugmode & DEBUG_COMMAND:
             print("< " + s)
@@ -302,7 +302,8 @@ class VBUSConnection(object):
     def _lsend(self, s):
         if self.debugmode & DEBUG_COMMAND:
             print("> " + s)
-        self._sock.send(s + "\r\n")
+            msg = s + "\r\n"
+        self._sock.send(msg.encode("utf-8"))
 
     def _bsend(self, s):
         if self.debugmode & DEBUG_HEXDUMP:
